@@ -1,3 +1,4 @@
+
 const rooms = new Map();
 
 const socketRooms = new Map();
@@ -44,4 +45,28 @@ export function createRoomCode() {
     } while (rooms.has(code));
 
     return code;
+}
+
+export function createRoom(socketId, name) {
+    const roomCode = createRoomCode();
+
+    const room = {
+        id: roomCode,
+        status: "waiting",
+        ownerSocketId: socketId,
+        players: [
+            {
+                socketId,
+                name,
+                color: "white"
+            }
+        ],
+        game: null,
+        rematchAcceptedBy: []
+    };
+
+    rooms.set(roomCode, room);
+    socketRooms.set(socketId, roomCode);
+
+    return room;
 }
