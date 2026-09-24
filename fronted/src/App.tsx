@@ -5,6 +5,7 @@ import { socket } from "./socket";
 
 import Lobby from "./components/Lobby";
 import GameRoom from "./components/GameRoom";
+import "./styles/board.css";
 
 import type {
     Room,

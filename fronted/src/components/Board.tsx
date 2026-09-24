@@ -8,6 +8,8 @@ type BoardProps = {
     board: Array<BoardPoint | null>;
     yourColor?: PlayerColor;
     selectedPoint: number | null;
+    legalFromPoints: number[];
+    legalToPoints: number[];
     onPointClick: (
         index: number
     ) => void;
@@ -27,6 +29,8 @@ function Board({
     board,
     yourColor,
     selectedPoint,
+    legalFromPoints,
+    legalToPoints,
     onPointClick,
     bar,
     borneOff,
@@ -48,6 +52,15 @@ function Board({
     ) {
         const point = board[index];
 
+        const isSelected =
+            selectedPoint === index;
+
+        const isLegalFrom =
+            legalFromPoints.includes(index);
+
+        const isLegalTo =
+            legalToPoints.includes(index);
+
         return (
             <button
                 key={index}
@@ -59,8 +72,16 @@ function Board({
                             ? "black-point"
                             : ""
                 } ${
-                    selectedPoint === index
+                    isSelected
                         ? "selected-point"
+                        : ""
+                } ${
+                    isLegalFrom
+                        ? "legal-from"
+                        : ""
+                } ${
+                    isLegalTo
+                        ? "legal-to"
                         : ""
                 }`}
                 onClick={() =>
@@ -88,14 +109,19 @@ function Board({
 
                     {point &&
                         point.count > 5 && (
-                            <span className="checker-count">
-                                {point.count}
-                            </span>
-                        )}
+                        <span className="checker-count">
+                            {point.count}
+                        </span>
+                    )}
                 </div>
             </button>
         );
     }
+
+    const myBarCount =
+        yourColor
+            ? bar[yourColor]
+            : 0;
 
     return (
         <div className="backgammon">
@@ -116,13 +142,16 @@ function Board({
                     </span>
 
                     <span>
-                        לבן:{" "}
-                        {bar.white}
+                        החיילים שלך:{" "}
+                        {myBarCount}
                     </span>
 
                     <span>
-                        שחור:{" "}
-                        {bar.black}
+                        לבן: {bar.white}
+                    </span>
+
+                    <span>
+                        שחור: {bar.black}
                     </span>
                 </button>
 

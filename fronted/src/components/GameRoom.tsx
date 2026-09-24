@@ -110,8 +110,10 @@ function GameRoom({
                     move.die === selectedDie
             );
 
-        if (selectedPoint === null &&
-            !selectedBar) {
+        if (
+            selectedPoint === null &&
+            !selectedBar
+        ) {
             const canStartFromHere =
                 possibleMoves.some(
                     (move) =>
@@ -203,8 +205,9 @@ function GameRoom({
         }
 
         if (
+            !room.yourColor ||
             game.bar[
-                room.yourColor!
+                room.yourColor
             ] === 0
         ) {
             setError(
@@ -257,10 +260,7 @@ function GameRoom({
             return;
         }
 
-        const from =
-            selectedPoint;
-
-        if (from === null) {
+        if (selectedPoint === null) {
             setError(
                 "בחר קודם חייל להוצאה"
             );
@@ -272,7 +272,7 @@ function GameRoom({
             game.legalMoves.find(
                 (possibleMove) =>
                     possibleMove.from ===
-                        from &&
+                        selectedPoint &&
                     possibleMove.to ===
                         "off" &&
                     possibleMove.die ===
@@ -350,6 +350,65 @@ function GameRoom({
         game?.status ===
             "waiting-for-roll" &&
         isMyTurn;
+
+    const possibleMoves =
+        game &&
+        selectedDie !== null
+            ? game.legalMoves.filter(
+                (move) =>
+                    move.die ===
+                    selectedDie
+            )
+            : [];
+
+    const legalFromPoints =
+        selectedDie !== null &&
+        selectedPoint === null &&
+        !selectedBar
+            ? [
+                ...new Set(
+                    possibleMoves
+                        .filter(
+                            (move) =>
+                                typeof move.from ===
+                                "number"
+                        )
+                        .map(
+                            (move) =>
+                                move.from as number
+                        )
+                )
+            ]
+            : [];
+
+    const legalToPoints =
+        selectedPoint !== null ||
+        selectedBar
+            ? [
+                ...new Set(
+                    possibleMoves
+                        .filter(
+                            (move) =>
+                                move.from ===
+                                    selectedPoint ||
+                                (
+                                    selectedBar &&
+                                    move.from ===
+                                        "bar"
+                                )
+                        )
+                        .filter(
+                            (move) =>
+                                typeof move.to ===
+                                "number"
+                        )
+                        .map(
+                            (move) =>
+                                move.to as number
+                        )
+                )
+            ]
+            : [];
 
     return (
         <div>
@@ -535,6 +594,12 @@ function GameRoom({
                         }
                         selectedPoint={
                             selectedPoint
+                        }
+                        legalFromPoints={
+                            legalFromPoints
+                        }
+                        legalToPoints={
+                            legalToPoints
                         }
                         onPointClick={
                             handlePointClick
