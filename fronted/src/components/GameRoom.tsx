@@ -1,8 +1,9 @@
+
 import { useState } from "react";
 
 import { socket } from "../socket";
 
-import Board from "./Board.tsx";
+import Board from "./Board";
 
 import type {
     Room as RoomType,
@@ -20,6 +21,15 @@ function GameRoom({
 }: GameRoomProps) {
     const [error, setError] =
         useState("");
+
+    const [selectedDie, setSelectedDie] =
+        useState<number | null>(null);
+
+    const [selectedPoint, setSelectedPoint] =
+        useState<number | null>(null);
+
+    const [selectedBar, setSelectedBar] =
+        useState(false);
 
     function startGame() {
         setError("");
@@ -41,6 +51,9 @@ function GameRoom({
 
     function rollDice() {
         setError("");
+        setSelectedDie(null);
+        setSelectedPoint(null);
+        setSelectedBar(false);
 
         socket.emit(
             "game:roll",
@@ -53,6 +66,249 @@ function GameRoom({
                         "לא ניתן לזרוק קוביות"
                     );
                 }
+            }
+        );
+    }
+
+    function selectDie(
+        die: number
+    ) {
+        setSelectedDie(die);
+        setSelectedPoint(null);
+        setSelectedBar(false);
+        setError("");
+    }
+
+    function handlePointClick(
+        index: number
+    ) {
+        setError("");
+
+        if (!game) {
+            return;
+        }
+
+        if (!isMyTurn) {
+            setError(
+                "זה לא התור שלך"
+            );
+
+            return;
+        }
+
+        if (selectedDie === null) {
+            setError(
+                "בחר קובייה קודם"
+            );
+
+            return;
+        }
+
+        const possibleMoves =
+            game.legalMoves.filter(
+                (move) =>
+                    move.die === selectedDie
+            );
+
+        if (selectedPoint === null &&
+            !selectedBar) {
+            const canStartFromHere =
+                possibleMoves.some(
+                    (move) =>
+                        move.from === index
+                );
+
+            if (!canStartFromHere) {
+                setError(
+                    "אין מהלך חוקי מהנקודה הזאת"
+                );
+
+                return;
+            }
+
+            setSelectedPoint(index);
+
+            return;
+        }
+
+        const from =
+            selectedBar
+                ? "bar"
+                : selectedPoint;
+
+        const move =
+            possibleMoves.find(
+                (possibleMove) =>
+                    possibleMove.from ===
+                        from &&
+                    possibleMove.to ===
+                        index
+            );
+
+        if (!move) {
+            setError(
+                "היעד הזה אינו חוקי"
+            );
+
+            return;
+        }
+
+        socket.emit(
+            "game:move",
+            {
+                from: move.from,
+                to: move.to,
+                die: move.die
+            },
+            (
+                response: SocketResponse
+            ) => {
+                if (!response.success) {
+                    setError(
+                        response.error?.message ??
+                        "מהלך לא חוקי"
+                    );
+
+                    return;
+                }
+
+                setSelectedDie(null);
+                setSelectedPoint(null);
+                setSelectedBar(false);
+            }
+        );
+    }
+
+    function handleBarClick() {
+        setError("");
+
+        if (!game) {
+            return;
+        }
+
+        if (!isMyTurn) {
+            setError(
+                "זה לא התור שלך"
+            );
+
+            return;
+        }
+
+        if (selectedDie === null) {
+            setError(
+                "בחר קובייה קודם"
+            );
+
+            return;
+        }
+
+        if (
+            game.bar[
+                room.yourColor!
+            ] === 0
+        ) {
+            setError(
+                "אין לך חייל ב-Bar"
+            );
+
+            return;
+        }
+
+        const canEnter =
+            game.legalMoves.some(
+                (move) =>
+                    move.from === "bar" &&
+                    move.die ===
+                        selectedDie
+            );
+
+        if (!canEnter) {
+            setError(
+                "אי אפשר להיכנס מה-Bar עם הקובייה הזאת"
+            );
+
+            return;
+        }
+
+        setSelectedBar(true);
+        setSelectedPoint(null);
+    }
+
+    function handleOffClick() {
+        setError("");
+
+        if (!game) {
+            return;
+        }
+
+        if (!isMyTurn) {
+            setError(
+                "זה לא התור שלך"
+            );
+
+            return;
+        }
+
+        if (selectedDie === null) {
+            setError(
+                "בחר קובייה קודם"
+            );
+
+            return;
+        }
+
+        const from =
+            selectedPoint;
+
+        if (from === null) {
+            setError(
+                "בחר קודם חייל להוצאה"
+            );
+
+            return;
+        }
+
+        const move =
+            game.legalMoves.find(
+                (possibleMove) =>
+                    possibleMove.from ===
+                        from &&
+                    possibleMove.to ===
+                        "off" &&
+                    possibleMove.die ===
+                        selectedDie
+            );
+
+        if (!move) {
+            setError(
+                "אי אפשר להוציא את החייל עם הקובייה הזאת"
+            );
+
+            return;
+        }
+
+        socket.emit(
+            "game:move",
+            {
+                from: move.from,
+                to: move.to,
+                die: move.die
+            },
+            (
+                response: SocketResponse
+            ) => {
+                if (!response.success) {
+                    setError(
+                        response.error?.message ??
+                        "מהלך לא חוקי"
+                    );
+
+                    return;
+                }
+
+                setSelectedDie(null);
+                setSelectedPoint(null);
+                setSelectedBar(false);
             }
         );
     }
@@ -148,10 +404,10 @@ function GameRoom({
                 2 &&
                 room.status ===
                     "waiting" && (
-                    <p>
-                        שני שחקנים בחדר
-                    </p>
-                )}
+                <p>
+                    שני שחקנים בחדר
+                </p>
+            )}
 
             {canStart && (
                 <button
@@ -193,13 +449,58 @@ function GameRoom({
                         קוביות:
                     </p>
 
-                    <p>
-                        {game.dice.length > 0
-                            ? game.dice.join(
-                                " - "
-                            )
-                            : "עדיין לא נזרקו"}
-                    </p>
+                    {game.dice.length > 0 ? (
+                        <div>
+                            {game.remainingDice.map(
+                                (
+                                    die,
+                                    index
+                                ) => (
+                                    <button
+                                        key={
+                                            index
+                                        }
+                                        onClick={() =>
+                                            selectDie(
+                                                die
+                                            )
+                                        }
+                                        disabled={
+                                            !isMyTurn ||
+                                            game.status !==
+                                                "waiting-for-move"
+                                        }
+                                    >
+                                        {die}
+                                    </button>
+                                )
+                            )}
+                        </div>
+                    ) : (
+                        <p>
+                            עדיין לא נזרקו
+                        </p>
+                    )}
+
+                    {selectedDie !== null && (
+                        <p>
+                            הקובייה שנבחרה:{" "}
+                            {selectedDie}
+                        </p>
+                    )}
+
+                    {selectedPoint !== null && (
+                        <p>
+                            נקודת מוצא:{" "}
+                            {selectedPoint + 1}
+                        </p>
+                    )}
+
+                    {selectedBar && (
+                        <p>
+                            נבחר Bar
+                        </p>
+                    )}
 
                     {canRoll && (
                         <button
@@ -212,25 +513,41 @@ function GameRoom({
                     {!isMyTurn &&
                         game.status ===
                             "waiting-for-roll" && (
-                            <p>
-                                ממתינים לתור
-                                של השחקן השני...
-                            </p>
-                        )}
+                        <p>
+                            ממתינים לתור
+                            של השחקן השני...
+                        </p>
+                    )}
 
                     {isMyTurn &&
                         game.status ===
                             "waiting-for-move" && (
-                            <p>
-                                עכשיו תורך לבצע
-                                מהלך
-                            </p>
-                        )}
+                        <p>
+                            עכשיו תורך לבצע
+                            מהלך
+                        </p>
+                    )}
 
                     <Board
                         board={game.board}
                         yourColor={
                             room.yourColor
+                        }
+                        selectedPoint={
+                            selectedPoint
+                        }
+                        onPointClick={
+                            handlePointClick
+                        }
+                        bar={game.bar}
+                        borneOff={
+                            game.borneOff
+                        }
+                        onBarClick={
+                            handleBarClick
+                        }
+                        onOffClick={
+                            handleOffClick
                         }
                     />
                 </div>

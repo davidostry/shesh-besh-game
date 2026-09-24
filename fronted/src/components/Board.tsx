@@ -1,3 +1,4 @@
+
 import type {
     BoardPoint,
     PlayerColor
@@ -6,11 +7,31 @@ import type {
 type BoardProps = {
     board: Array<BoardPoint | null>;
     yourColor?: PlayerColor;
+    selectedPoint: number | null;
+    onPointClick: (
+        index: number
+    ) => void;
+    bar: {
+        white: number;
+        black: number;
+    };
+    borneOff: {
+        white: number;
+        black: number;
+    };
+    onBarClick: () => void;
+    onOffClick: () => void;
 };
 
 function Board({
     board,
-    yourColor
+    yourColor,
+    selectedPoint,
+    onPointClick,
+    bar,
+    borneOff,
+    onBarClick,
+    onOffClick
 }: BoardProps) {
     const topPoints = [
         12, 13, 14, 15, 16, 17,
@@ -28,47 +49,51 @@ function Board({
         const point = board[index];
 
         return (
-            <div
+            <button
                 key={index}
+                type="button"
                 className={`board-point ${
                     point?.color === "white"
                         ? "white-point"
                         : point?.color === "black"
                             ? "black-point"
                             : ""
+                } ${
+                    selectedPoint === index
+                        ? "selected-point"
+                        : ""
                 }`}
+                onClick={() =>
+                    onPointClick(index)
+                }
             >
                 <div className="point-number">
                     {index + 1}
                 </div>
 
                 <div className="checkers">
-                    {point && (
-                        <>
-                            {Array.from({
-                                length: point.count
-                            }).map(
-                                (_, checkerIndex) => (
-                                    <div
-                                        key={
-                                            checkerIndex
-                                        }
-                                        className={`checker ${
-                                            point.color
-                                        }`}
-                                    />
-                                )
-                            )}
+                    {point &&
+                        Array.from({
+                            length: point.count
+                        }).map(
+                            (_, checkerIndex) => (
+                                <div
+                                    key={
+                                        checkerIndex
+                                    }
+                                    className={`checker ${point.color}`}
+                                />
+                            )
+                        )}
 
-                            {point.count > 5 && (
-                                <span className="checker-count">
-                                    {point.count}
-                                </span>
-                            )}
-                        </>
-                    )}
+                    {point &&
+                        point.count > 5 && (
+                            <span className="checker-count">
+                                {point.count}
+                            </span>
+                        )}
                 </div>
-            </div>
+            </button>
         );
     }
 
@@ -78,6 +103,48 @@ function Board({
                 <span>
                     אתה: {yourColor}
                 </span>
+            </div>
+
+            <div className="game-info">
+                <button
+                    type="button"
+                    className="bar-area"
+                    onClick={onBarClick}
+                >
+                    <span>
+                        Bar
+                    </span>
+
+                    <span>
+                        לבן:{" "}
+                        {bar.white}
+                    </span>
+
+                    <span>
+                        שחור:{" "}
+                        {bar.black}
+                    </span>
+                </button>
+
+                <button
+                    type="button"
+                    className="off-area"
+                    onClick={onOffClick}
+                >
+                    <span>
+                        Off
+                    </span>
+
+                    <span>
+                        לבן:{" "}
+                        {borneOff.white}
+                    </span>
+
+                    <span>
+                        שחור:{" "}
+                        {borneOff.black}
+                    </span>
+                </button>
             </div>
 
             <div className="board">

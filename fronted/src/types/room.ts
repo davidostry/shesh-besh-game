@@ -23,6 +23,12 @@ export type BoardPoint = {
     count: number;
 };
 
+export type LegalMove = {
+    from: number | "bar";
+    to: number | "off";
+    die: number;
+};
+
 export type Game = {
     board: Array<
         BoardPoint | null
@@ -51,6 +57,8 @@ export type Game = {
     winner:
         | PlayerColor
         | null;
+
+    legalMoves: LegalMove[];
 };
 
 export type Room = {

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 
 import { socket } from "./socket";
@@ -5,7 +6,11 @@ import { socket } from "./socket";
 import Lobby from "./components/Lobby";
 import GameRoom from "./components/GameRoom";
 
-import type { Room } from "./types/room";
+import type {
+    Room,
+    Game,
+    SocketResponse
+} from "./types/room";
 
 function App() {
     const [connected, setConnected] =
@@ -21,12 +26,32 @@ function App() {
 
         function onDisconnect() {
             setConnected(false);
+            setRoom(null);
         }
 
         function onRoomState(
             newRoom: Room
         ) {
             setRoom(newRoom);
+        }
+
+        function onGameState(
+            game: Game
+        ) {
+            setRoom((currentRoom) => {
+                if (!currentRoom) {
+                    return currentRoom;
+                }
+
+                return {
+                    ...currentRoom,
+                    game
+                };
+            });
+        }
+
+        function onRoomClosed() {
+            setRoom(null);
         }
 
         socket.on(
@@ -44,6 +69,16 @@ function App() {
             onRoomState
         );
 
+        socket.on(
+            "game:state",
+            onGameState
+        );
+
+        socket.on(
+            "room:closed",
+            onRoomClosed
+        );
+
         return () => {
             socket.off(
                 "connect",
@@ -58,6 +93,16 @@ function App() {
             socket.off(
                 "room:state",
                 onRoomState
+            );
+
+            socket.off(
+                "game:state",
+                onGameState
+            );
+
+            socket.off(
+                "room:closed",
+                onRoomClosed
             );
         };
     }, []);
