@@ -1,3 +1,4 @@
+
 export function rollDie() {
     return Math.floor(Math.random() * 6) + 1;
 }
@@ -9,18 +10,30 @@ export function rollDice() {
     if (first === second) {
         return {
             dice: [first, second],
-            remainingDice: [first, first, first, first]
+            remainingDice: [
+                first,
+                first,
+                first,
+                first
+            ]
         };
     }
 
     return {
         dice: [first, second],
-        remainingDice: [first, second]
+        remainingDice: [
+            first,
+            second
+        ]
     };
 }
 
-export function removeDie(remainingDice, die) {
-    const index = remainingDice.indexOf(die);
+export function removeDie(
+    remainingDice,
+    die
+) {
+    const index =
+        remainingDice.indexOf(die);
 
     if (index === -1) {
         return null;
