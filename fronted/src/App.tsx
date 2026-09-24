@@ -1,33 +1,27 @@
 
 import { useEffect, useState } from "react";
 
-import { socket } from "./Socket"
+import { socket } from "./socket";
 
-type RoomPlayer = {
-    name: string;
-    color: "white" | "black";
-};
+import Lobby from "./components/Lobby";
+import Room from "./components/Room";
 
-type Room = {
-    id: string;
-    status: "waiting" | "playing" | "finished";
-    players: RoomPlayer[];
-    game: unknown;
-    rematchAcceptedBy: string[];
-    yourColor?: "white" | "black";
-};
+import type { Room as RoomType } from "./types/room";
 
 function App() {
-    const [name, setName] = useState("");
-    const [room, setRoom] = useState<Room | null>(null);
-    const [error, setError] = useState("");
-    const [connected, setConnected] = useState(
-        socket.connected
-    );
+    const [room, setRoom] =
+        useState<RoomType | null>(null);
+
+    const [connected, setConnected] =
+        useState(socket.connected);
+
+    const [error, setError] =
+        useState("");
 
     useEffect(() => {
         function handleConnect() {
             setConnected(true);
+
             setError("");
 
             console.log(
@@ -45,7 +39,7 @@ function App() {
         }
 
         function handleRoomState(
-            newRoom: Room
+            newRoom: RoomType
         ) {
             console.log(
                 "Room state:",
@@ -53,6 +47,23 @@ function App() {
             );
 
             setRoom(newRoom);
+        }
+
+        function handleRoomClosed(
+            data: {
+                reason: string;
+            }
+        ) {
+            console.log(
+                "Room closed:",
+                data
+            );
+
+            setRoom(null);
+
+            setError(
+                "החדר נסגר"
+            );
         }
 
         socket.on(
@@ -70,6 +81,11 @@ function App() {
             handleRoomState
         );
 
+        socket.on(
+            "room:closed",
+            handleRoomClosed
+        );
+
         return () => {
             socket.off(
                 "connect",
@@ -85,135 +101,24 @@ function App() {
                 "room:state",
                 handleRoomState
             );
+
+            socket.off(
+                "room:closed",
+                handleRoomClosed
+            );
         };
     }, []);
 
-    function createRoom() {
+    function handleRoomCreated(
+        newRoom: RoomType
+    ) {
+        setRoom(newRoom);
         setError("");
-
-        const trimmedName =
-            name.trim();
-
-        if (!trimmedName) {
-            setError(
-                "יש להכניס שם"
-            );
-
-            return;
-        }
-
-        socket.emit(
-            "room:create",
-            {
-                name: trimmedName
-            },
-            (
-                response: {
-                    success: boolean;
-                    room?: Room;
-                    error?: {
-                        code: string;
-                        message: string;
-                    };
-                }
-            ) => {
-                console.log(
-                    "Create room response:",
-                    response
-                );
-
-                if (!response.success) {
-                    setError(
-                        response.error?.message ??
-                        "אירעה שגיאה"
-                    );
-
-                    return;
-                }
-
-                if (response.room) {
-                    setRoom(
-                        response.room
-                    );
-                }
-            }
-        );
     }
 
-    function leaveRoom() {
+    function handleLeave() {
+        setRoom(null);
         setError("");
-
-        socket.emit(
-            "room:leave",
-            (
-                response: {
-                    success: boolean;
-                    error?: {
-                        code: string;
-                        message: string;
-                    };
-                }
-            ) => {
-                if (!response.success) {
-                    setError(
-                        response.error?.message ??
-                        "אירעה שגיאה"
-                    );
-
-                    return;
-                }
-
-                setRoom(null);
-            }
-        );
-    }
-
-    if (room) {
-        return (
-            <div>
-                <h1>
-                    שש בש אונליין
-                </h1>
-
-                <h2>
-                    החדר נוצר
-                </h2>
-
-                <p>
-                    קוד חדר:
-                </p>
-
-                <h1>
-                    {room.id}
-                </h1>
-
-                <p>
-                    השם שלך:{" "}
-                    {room.players[0]?.name}
-                </p>
-
-                <p>
-                    הצבע שלך:{" "}
-                    {room.yourColor}
-                </p>
-
-                <p>
-                    שחקנים בחדר:{" "}
-                    {room.players.length}
-                </p>
-
-                <p>
-                    סטטוס:{" "}
-                    {room.status}
-                </p>
-
-                <button
-                    onClick={leaveRoom}
-                >
-                    עזוב חדר
-                </button>
-            </div>
-        );
     }
 
     return (
@@ -229,32 +134,26 @@ function App() {
                     : "לא מחובר"}
             </p>
 
-            <h2>
-                יצירת חדר
-            </h2>
-
-            <input
-                type="text"
-                placeholder="הכנס שם"
-                value={name}
-                onChange={(event) =>
-                    setName(
-                        event.target.value
-                    )
-                }
-            />
-
-            <button
-                onClick={createRoom}
-                disabled={!connected}
-            >
-                צור חדר
-            </button>
-
             {error && (
                 <p>
                     {error}
                 </p>
+            )}
+
+            {!room ? (
+                <Lobby
+                    connected={connected}
+                    onRoomCreated={
+                        handleRoomCreated
+                    }
+                />
+            ) : (
+                <Room
+                    room={room}
+                    onLeave={
+                        handleLeave
+                    }
+                />
             )}
         </div>
     );
