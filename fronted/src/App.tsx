@@ -1,158 +1,98 @@
-
 import { useEffect, useState } from "react";
 
 import { socket } from "./socket";
 
 import Lobby from "./components/Lobby";
-import Room from "./components/Room";
+import RoomPage from "./components/Room";
 
-import type { Room as RoomType } from "./types/room";
+import type { Room } from "./types/room";
 
 function App() {
-    const [room, setRoom] =
-        useState<RoomType | null>(null);
-
     const [connected, setConnected] =
         useState(socket.connected);
 
-    const [error, setError] =
-        useState("");
+    const [room, setRoom] =
+        useState<Room | null>(null);
 
     useEffect(() => {
-        function handleConnect() {
+        function onConnect() {
             setConnected(true);
-
-            setError("");
-
-            console.log(
-                "Connected:",
-                socket.id
-            );
         }
 
-        function handleDisconnect() {
+        function onDisconnect() {
             setConnected(false);
-
-            console.log(
-                "Disconnected"
-            );
         }
 
-        function handleRoomState(
-            newRoom: RoomType
+        function onRoomState(
+            newRoom: Room
         ) {
-            console.log(
-                "Room state:",
-                newRoom
-            );
-
             setRoom(newRoom);
-        }
-
-        function handleRoomClosed(
-            data: {
-                reason: string;
-            }
-        ) {
-            console.log(
-                "Room closed:",
-                data
-            );
-
-            setRoom(null);
-
-            setError(
-                "החדר נסגר"
-            );
         }
 
         socket.on(
             "connect",
-            handleConnect
+            onConnect
         );
 
         socket.on(
             "disconnect",
-            handleDisconnect
+            onDisconnect
         );
 
         socket.on(
             "room:state",
-            handleRoomState
-        );
-
-        socket.on(
-            "room:closed",
-            handleRoomClosed
+            onRoomState
         );
 
         return () => {
             socket.off(
                 "connect",
-                handleConnect
+                onConnect
             );
 
             socket.off(
                 "disconnect",
-                handleDisconnect
+                onDisconnect
             );
 
             socket.off(
                 "room:state",
-                handleRoomState
-            );
-
-            socket.off(
-                "room:closed",
-                handleRoomClosed
+                onRoomState
             );
         };
     }, []);
 
     function handleRoomCreated(
-        newRoom: RoomType
+        newRoom: Room
     ) {
         setRoom(newRoom);
-        setError("");
     }
 
     function handleLeave() {
         setRoom(null);
-        setError("");
     }
 
     return (
         <div>
-            <h1>
-                שש בש אונליין
-            </h1>
-
-            <p>
-                חיבור לשרת:{" "}
-                {connected
-                    ? "מחובר"
-                    : "לא מחובר"}
-            </p>
-
-            {error && (
+            {!connected && (
                 <p>
-                    {error}
+                    מתחבר לשרת...
                 </p>
             )}
 
-            {!room ? (
+            {connected && !room && (
                 <Lobby
                     connected={connected}
                     onRoomCreated={
                         handleRoomCreated
                     }
                 />
-            ) : (
-                <Room
+            )}
+
+            {connected && room && (
+                <RoomPage
                     room={room}
-                    onLeave={
-                        handleLeave
-                    }
+                    onLeave={handleLeave}
                 />
             )}
         </div>

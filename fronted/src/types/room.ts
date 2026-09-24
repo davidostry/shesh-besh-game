@@ -8,17 +8,62 @@ export type RoomStatus =
     | "playing"
     | "finished";
 
+export type GameStatus =
+    | "waiting-for-roll"
+    | "waiting-for-move"
+    | "finished";
+
 export type RoomPlayer = {
     name: string;
     color: PlayerColor;
 };
 
+export type BoardPoint = {
+    color: PlayerColor;
+    count: number;
+};
+
+export type Game = {
+    board: Array<
+        BoardPoint | null
+    >;
+
+    currentPlayer:
+        | PlayerColor
+        | null;
+
+    dice: number[];
+
+    remainingDice: number[];
+
+    bar: {
+        white: number;
+        black: number;
+    };
+
+    borneOff: {
+        white: number;
+        black: number;
+    };
+
+    status: GameStatus;
+
+    winner:
+        | PlayerColor
+        | null;
+};
+
 export type Room = {
     id: string;
+
     status: RoomStatus;
+
     players: RoomPlayer[];
-    game: unknown;
+
+    game: Game | null;
+
     rematchAcceptedBy: string[];
+
     yourColor?: PlayerColor;
 };
 
@@ -29,6 +74,8 @@ export type SocketError = {
 
 export type SocketResponse = {
     success: boolean;
+
     room?: Room;
+
     error?: SocketError;
 };

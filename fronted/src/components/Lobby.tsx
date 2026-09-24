@@ -10,6 +10,7 @@ import type {
 
 type LobbyProps = {
     connected: boolean;
+
     onRoomCreated: (
         room: Room
     ) => void;
