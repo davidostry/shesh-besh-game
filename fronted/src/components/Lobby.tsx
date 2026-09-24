@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 
 import { socket } from "../socket";
@@ -51,11 +50,6 @@ function Lobby({
             (
                 response: SocketResponse
             ) => {
-                console.log(
-                    "Create room response:",
-                    response
-                );
-
                 if (!response.success) {
                     setError(
                         response.error?.message ??
@@ -111,11 +105,6 @@ function Lobby({
             (
                 response: SocketResponse
             ) => {
-                console.log(
-                    "Join room response:",
-                    response
-                );
-
                 if (!response.success) {
                     setError(
                         response.error?.message ??

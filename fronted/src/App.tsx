@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { socket } from "./socket";
 
 import Lobby from "./components/Lobby";
-import RoomPage from "./components/Room";
+import GameRoom from "./components/GameRoom";
 
 import type { Room } from "./types/room";
 
@@ -90,7 +90,7 @@ function App() {
             )}
 
             {connected && room && (
-                <RoomPage
+                <GameRoom
                     room={room}
                     onLeave={handleLeave}
                 />
